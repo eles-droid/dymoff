@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ДЫМOFF — Лаунж пространство</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080810;
+    --surface: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+    --violet: #9b59ff;
+    --violet-glow: rgba(155,89,255,0.4);
+    --blue: #4fc3f7;
+    --blue-glow: rgba(79,195,247,0.3);
+    --pink: #f472b6;
+    --pink-glow: rgba(244,114,182,0.3);
+    --text: #e8e8f0;
+    --muted: rgba(232,232,240,0.45);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Raleway', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* ── CURSOR ── */
+  #cursor {
+    position: fixed; width: 18px; height: 18px;
+    border: 1.5px solid var(--violet);
+    border-radius: 50%; pointer-events: none; z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: transform .12s ease, width .2s, height .2s, background .2s, border-color .2s;
+    mix-blend-mode: screen;
+  }
+  #cursor.big {
+    width: 44px; height: 44px;
+    background: var(--violet-glow);
+    border-color: var(--pink);
+  }
+
+  /* ── GRAIN OVERLAY ── */
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    opacity: .025;
+  }
+
+  /* ── SCROLL INDICATOR ── */
+  #scroll-bar {
+    position: fixed; top: 0; left: 0; height: 2px; z-index: 9990;
+    background: linear-gradient(90deg, var(--violet), var(--pink));
+    width: 0%; transition: width .1s linear;
+    box-shadow: 0 0 8px var(--violet-glow);
+  }
+
+  /* ── SMOKE CANVAS ── */
+  #smoke-canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative; min-height: 100svh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    overflow: hidden;
+    background: radial-gradient(ellipse 80% 60% at 50% 80%, rgba(155,89,255,.18) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 40% at 20% 20%, rgba(79,195,247,.1) 0%, transparent 60%),
+                var(--bg);
+  }
+
+  .hero-content {
+    position: relative; z-index: 10;
+    text-align: center; padding: 2rem;
+  }
+
+  .logo {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(3.5rem, 14vw, 9rem);
+    font-weight: 900;
+    letter-spacing: .05em;
+    line-height: 1;
+    background: linear-gradient(135deg, #fff 0%, var(--violet) 50%, var(--pink) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 40px var(--violet-glow));
+    animation: neonOn 1.2s ease-out both, floatLogo 6s ease-in-out infinite 1.5s;
+  }
+
+  @keyframes neonOn {
+    0% { opacity: 0; filter: drop-shadow(0 0 0px transparent); }
+    60% { opacity: .7; filter: drop-shadow(0 0 60px var(--violet-glow)); }
+    100% { opacity: 1; filter: drop-shadow(0 0 40px var(--violet-glow)); }
+  }
+  @keyframes floatLogo {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .tagline {
+    font-family: 'Raleway', sans-serif;
+    font-weight: 300;
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    letter-spacing: .35em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 1rem;
+    animation: fadeUp .8s .8s ease-out both;
+  }
+
+  .divider-line {
+    width: 80px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--violet), transparent);
+    margin: 2rem auto;
+    animation: fadeUp .8s 1s ease-out both;
+  }
+
+  .btn-primary {
+    display: inline-block;
+    padding: .9rem 2.6rem;
+    border: 1px solid var(--violet);
+    border-radius: 50px;
+    font-family: 'Raleway', sans-serif;
+    font-size: .95rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: #fff;
+    background: rgba(155,89,255,.12);
+    backdrop-filter: blur(8px);
+    cursor: none;
+    position: relative; overflow: hidden;
+    animation: fadeUp .8s 1.2s ease-out both, pulse 3s 2s ease-in-out infinite;
+    transition: background .3s, box-shadow .3s, transform .2s;
+  }
+  .btn-primary::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, var(--violet), var(--pink));
+    opacity: 0; transition: opacity .3s;
+  }
+  .btn-primary span { position: relative; z-index: 1; }
+  .btn-primary:hover::before { opacity: 1; }
+  .btn-primary:hover { box-shadow: 0 0 30px var(--violet-glow); transform: translateY(-2px); }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 var(--violet-glow); }
+    50% { box-shadow: 0 0 20px 4px var(--violet-glow); }
+  }
+
+  .scroll-hint {
+    position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: .5rem;
+    color: var(--muted); font-size: .7rem; letter-spacing: .2em;
+    animation: fadeUp .8s 2s ease-out both;
+  }
+  .scroll-hint .arrow {
+    width: 18px; height: 18px; border-right: 1px solid var(--violet);
+    border-bottom: 1px solid var(--violet);
+    transform: rotate(45deg);
+    animation: arrowBounce 1.5s ease-in-out infinite;
+  }
+  @keyframes arrowBounce {
+    0%,100% { transform: rotate(45deg) translateY(0); }
+    50% { transform: rotate(45deg) translateY(5px); }
+  }
+
+  /* ── SECTION COMMON ── */
+  section { padding: 6rem 1.5rem; position: relative; }
+  .section-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: .65rem;
+    letter-spacing: .4em;
+    text-transform: uppercase;
+    color: var(--violet);
+    margin-bottom: .8rem;
+  }
+  .section-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.8rem, 6vw, 3rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,.7) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .section-sub {
+    color: var(--muted); font-size: 1rem; max-width: 480px;
+    line-height: 1.7; margin-bottom: 3rem;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* ── GRID ── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+  }
+
+  /* ── GLASS CARD ── */
+  .glass-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2rem 1.8rem;
+    backdrop-filter: blur(16px);
+    position: relative; overflow: hidden;
+    transition: transform .3s ease, box-shadow .3s ease, border-color .3s;
+    opacity: 0; transform: translateY(30px);
+  }
+  .glass-card.visible {
+    animation: fadeUp .7s ease-out forwards;
+  }
+  .glass-card::before {
+    content: ''; position: absolute; inset: 0; border-radius: 20px;
+    background: linear-gradient(135deg, rgba(155,89,255,.08) 0%, rgba(244,114,182,.04) 100%);
+    opacity: 0; transition: opacity .3s;
+  }
+  .glass-card:hover { transform: translateY(-6px) scale(1.02); border-color: rgba(155,89,255,.4); }
+  .glass-card:hover::before { opacity: 1; }
+  .glass-card:hover { box-shadow: 0 8px 40px rgba(155,89,255,.25), 0 0 0 1px rgba(155,89,255,.15); }
+
+  .card-icon {
+    font-size: 2.8rem; margin-bottom: 1.2rem; display: block;
+    filter: drop-shadow(0 0 12px var(--violet-glow));
+  }
+  .card-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    letter-spacing: .05em; margin-bottom: .4rem;
+  }
+  .card-desc {
+    color: var(--muted); font-size: .85rem; line-height: 1.6;
+    margin-bottom: 1.2rem;
+  }
+  .card-price {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.4rem; font-weight: 700;
+    background: linear-gradient(90deg, var(--violet), var(--pink));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── HOOKAH SECTION ── */
+  .hookah-section {
+    background: radial-gradient(ellipse 60% 50% at 50% 100%, rgba(155,89,255,.1) 0%, transparent 70%);
+  }
+  .hookah-section .glass-card:nth-child(1) { animation-delay: .0s; }
+  .hookah-section .glass-card:nth-child(2) { animation-delay: .12s; }
+  .hookah-section .glass-card:nth-child(3) { animation-delay: .24s; }
+
+  /* intensity bar */
+  .intensity {
+    display: flex; gap: 4px; margin-bottom: 1rem;
+  }
+  .intensity-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border);
+    transition: background .3s;
+  }
+  .intensity-dot.active { background: var(--violet); box-shadow: 0 0 6px var(--violet-glow); }
+
+  /* ── SNACKS ── */
+  .snacks-section {
+    background: radial-gradient(ellipse 60% 40% at 80% 50%, rgba(244,114,182,.07) 0%, transparent 60%);
+  }
+  .snacks-section .glass-card { border-color: rgba(244,114,182,.12); }
+  .snacks-section .glass-card:hover { border-color: rgba(244,114,182,.4); box-shadow: 0 8px 40px rgba(244,114,182,.2); }
+  .snacks-section .card-price { background: linear-gradient(90deg, var(--pink), #fb923c); -webkit-background-clip: text; background-clip: text; }
+
+  /* ── TEA ── */
+  .tea-section {
+    background: radial-gradient(ellipse 50% 50% at 30% 50%, rgba(79,195,247,.07) 0%, transparent 60%);
+  }
+  .tea-section .glass-card { border-color: rgba(79,195,247,.12); }
+  .tea-section .glass-card:hover { border-color: rgba(79,195,247,.4); box-shadow: 0 8px 40px rgba(79,195,247,.2); }
+  .tea-section .card-price { background: linear-gradient(90deg, var(--blue), #67e8f9); -webkit-background-clip: text; background-clip: text; }
+  .steam {
+    position: absolute; top: -10px; right: 20px;
+    font-size: 2rem; opacity: .15;
+    animation: steamRise 3s ease-in-out infinite;
+  }
+  @keyframes steamRise {
+    0%,100% { transform: translateY(0) scaleX(1); opacity: .15; }
+    50% { transform: translateY(-12px) scaleX(1.2); opacity: .05; }
+  }
+
+  /* ── DRINKS ── */
+  .drinks-section {
+    background: radial-gradient(ellipse 60% 40% at 20% 50%, rgba(79,195,247,.06) 0%, transparent 60%);
+  }
+
+
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SEPARATOR ── */
+  .sep {
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 0 auto;
+  }
+
+  /* ── PARALLAX WRAPPER ── */
+  .parallax-bg {
+    position: absolute; inset: 0; pointer-events: none;
+    will-change: transform;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 1.2rem 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(8,8,16,.6); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    animation: fadeDown .8s ease-out both;
+  }
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .nav-logo {
+    font-family: 'Orbitron', sans-serif; font-weight: 900;
+    font-size: 1.4rem; letter-spacing: .08em;
+    background: linear-gradient(135deg, var(--violet), var(--pink));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    text-decoration: none;
+  }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none; font-size: .82rem;
+    letter-spacing: .12em; text-transform: uppercase;
+    transition: color .2s;
+  }
+  .nav-links a:hover { color: #fff; }
+  @media(max-width:600px){ .nav-links { display: none; } }
+
+  /* ── SECTION HEADER LAYOUT ── */
+  .section-header { margin-bottom: 3rem; }
+  .section-header.center { text-align: center; }
+  .section-header.center .section-sub { margin-left: auto; margin-right: auto; }
+
+  /* ── BADGE ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .3rem .8rem; border-radius: 50px;
+    border: 1px solid var(--border);
+    font-size: .7rem; letter-spacing: .15em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 2.5rem;
+    background: var(--surface);
+  }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80;
+    box-shadow: 0 0 8px #4ade80; animation: blink 2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="scroll-bar"></div>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">ДЫМOFF</a>
+  <ul class="nav-links">
+    <li><a href="#hookahs">Кальяны</a></li>
+    <li><a href="#snacks">Закуски</a></li>
+    <li><a href="#tea">Чай</a></li>
+    <li><a href="#drinks">Напитки</a></li>
+
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <canvas id="smoke-canvas"></canvas>
+  <div class="hero-content">
+    <div class="badge"><span class="badge-dot"></span>Открыто сейчас</div>
+    <h1 class="logo">ДЫМOFF</h1>
+    <p class="tagline">Лаунж пространство для отдыха</p>
+    <div class="divider-line"></div>
+    <a href="#hookahs" class="btn-primary"><span>Посмотреть меню</span></a>
+  </div>
+  <div class="scroll-hint">
+    <span>Скролл</span>
+    <div class="arrow"></div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- HOOKAHS -->
+<section class="hookah-section" id="hookahs">
+  <div class="container">
+    <div class="section-header">
+      <p class="section-label">— Меню кальянов</p>
+      <h2 class="section-title">Кальяны</h2>
+      <p class="section-sub">Тщательно подобранный табак, идеальная забивка и неспешная атмосфера — всё для вашего расслабления.</p>
+    </div>
+    <div class="cards-grid">
+      <div class="glass-card">
+        <span class="card-icon">🌿</span>
+        <div class="intensity">
+          <div class="intensity-dot active"></div>
+          <div class="intensity-dot"></div>
+          <div class="intensity-dot"></div>
+        </div>
+        <div class="card-name">Лёгкий</div>
+        <div class="card-desc">Мягкие фруктовые миксы. Идеально для первого знакомства или долгого вечера.</div>
+        <div class="card-price">800 ₽</div>
+      </div>
+      <div class="glass-card">
+        <span class="card-icon">💨</span>
+        <div class="intensity">
+          <div class="intensity-dot active"></div>
+          <div class="intensity-dot active"></div>
+          <div class="intensity-dot"></div>
+        </div>
+        <div class="card-name">Средний</div>
+        <div class="card-desc">Насыщенный вкус и плотный дым. Оптимальный баланс для большинства гостей.</div>
+        <div class="card-price">900 ₽</div>
+      </div>
+      <div class="glass-card">
+        <span class="card-icon">🔥</span>
+        <div class="intensity">
+          <div class="intensity-dot active"></div>
+          <div class="intensity-dot active"></div>
+          <div class="intensity-dot active"></div>
+        </div>
+        <div class="card-name">Тяжёлый</div>
+        <div class="card-desc">Крепкий микс для настоящих ценителей. Максимальная густота и интенсивность.</div>
+        <div class="card-price">1 100 ₽</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- SNACKS -->
+<section class="snacks-section" id="snacks">
+  <div class="container">
+    <div class="section-header">
+      <p class="section-label">— Закуски</p>
+      <h2 class="section-title">Снеки</h2>
+      <p class="section-sub">Идеальное дополнение к кальяну.</p>
+    </div>
+    <div class="cards-grid">
+      <div class="glass-card">
+        <span class="card-icon">🥩</span>
+        <div class="card-name">Чипсы «Шашлык»</div>
+        <div class="card-desc">Насыщенный вкус копчёного мяса в каждом чипсе.</div>
+        <div class="card-price">150 ₽</div>
+      </div>
+      <div class="glass-card">
+        <span class="card-icon">🌿</span>
+        <div class="card-name">Чипсы «Сметана и зелень»</div>
+        <div class="card-desc">Нежный сливочный вкус со свежей зеленью.</div>
+        <div class="card-price">150 ₽</div>
+      </div>
+      <div class="glass-card">
+        <span class="card-icon">🦀</span>
+        <div class="card-name">Чипсы «Краб»</div>
+        <div class="card-desc">Морской вкус с лёгкой пикантностью.</div>
+        <div class="card-price">150 ₽</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- TEA -->
+<section class="tea-section" id="tea">
+  <div class="container">
+    <div class="section-header">
+      <p class="section-label">— Чай</p>
+      <h2 class="section-title">Чай</h2>
+      <p class="section-sub">Горячий чай из разных уголков мира — тепло в каждой чашке.</p>
+    </div>
+    <div class="cards-grid">
+      <div class="glass-card">
+        <span class="steam">☁</span>
+        <span class="card-icon">🫖</span>
+        <div class="card-name">Марокканский</div>
+        <div class="card-desc">Мятный чай с пряностями и мёдом. Настоящий ближневосточный ритуал.</div>
+        <div class="card-price">250 ₽</div>
+      </div>
+      <div class="glass-card">
+        <span class="steam">☁</span>
+        <span class="card-icon">🍃</span>
+        <div class="card-name">Казахский</div>
+        <div class="card-desc">Чёрный чай с молоком — традиционный рецепт степей.</div>
+        <div class="card-price">250 ₽</div>
+      </div>
+      <div class="glass-card">
+        <span class="steam">☁</span>
+        <span class="card-icon">🌸</span>
+        <div class="card-name">Узбекский</div>
+        <div class="card-desc">Зелёный чай с ароматными травами. Освежает и успокаивает.</div>
+        <div class="card-price">250 ₽</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- DRINKS -->
+<section class="drinks-section" id="drinks">
+  <div class="container">
+    <div class="section-header">
+      <p class="section-label">— Напитки</p>
+      <h2 class="section-title">Напитки</h2>
+      <p class="section-sub">Освежающие безалкогольные напитки к вашему вечеру.</p>
+    </div>
+    <div class="cards-grid">
+      <div class="glass-card">
+        <span class="card-icon">🥤</span>
+        <div class="card-name">Кола</div>
+        <div class="card-desc">Классическая Coca-Cola. 1 литр.</div>
+        <div class="card-price">120 ₽</div>
+      </div>
+      <div class="glass-card">
+        <span class="card-icon">🍊</span>
+        <div class="card-name">Фанта</div>
+        <div class="card-desc">Яркая апельсиновая Fanta. 1 литр.</div>
+        <div class="card-price">120 ₽</div>
+      </div>
+      <div class="glass-card">
+        <span class="card-icon">🍹</span>
+        <div class="card-name">Сок</div>
+        <div class="card-desc">Натуральный сок на выбор. 1 литр.</div>
+        <div class="card-price">120 ₽</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<script>
+/* ── CURSOR ── */
+const cur = document.getElementById('cursor');
+document.addEventListener('mousemove', e => {
+  cur.style.left = e.clientX + 'px';
+  cur.style.top = e.clientY + 'px';
+});
+document.querySelectorAll('a, button, .glass-card').forEach(el => {
+  el.addEventListener('mouseenter', () => cur.classList.add('big'));
+  el.addEventListener('mouseleave', () => cur.classList.remove('big'));
+});
+
+/* ── SCROLL BAR ── */
+window.addEventListener('scroll', () => {
+  const p = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+  document.getElementById('scroll-bar').style.width = (p * 100) + '%';
+});
+
+/* ── SMOKE CANVAS ── */
+function initSmoke(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  class Particle {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = W * (.2 + Math.random() * .6);
+      this.y = H + 20;
+      this.vx = (Math.random() - .5) * .4;
+      this.vy = -(0.3 + Math.random() * .5);
+      this.r = 30 + Math.random() * 60;
+      this.alpha = 0;
+      this.targetAlpha = .04 + Math.random() * .06;
+      this.life = 0;
+      this.maxLife = 180 + Math.random() * 120;
+      this.hue = 250 + Math.random() * 60; // violet-ish
+    }
+    update() {
+      this.life++;
+      this.x += this.vx;
+      this.y += this.vy;
+      this.r += .15;
+      this.vx += (Math.random() - .5) * .03;
+      const prog = this.life / this.maxLife;
+      if (prog < .3) this.alpha = this.targetAlpha * (prog / .3);
+      else if (prog > .7) this.alpha = this.targetAlpha * (1 - (prog - .7) / .3);
+      else this.alpha = this.targetAlpha;
+      if (this.life >= this.maxLife) this.reset();
+    }
+    draw() {
+      const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r);
+      g.addColorStop(0, `hsla(${this.hue},60%,70%,${this.alpha})`);
+      g.addColorStop(1, `hsla(${this.hue},60%,70%,0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  for (let i = 0; i < 18; i++) {
+    const p = new Particle();
+    p.life = Math.random() * p.maxLife; // stagger
+    particles.push(p);
+  }
+
+  function loop() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => { p.update(); p.draw(); });
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+initSmoke('smoke-canvas');
+
+/* ── INTERSECTION OBSERVER (card reveal) ── */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: .15 });
+document.querySelectorAll('.glass-card').forEach((el, i) => {
+  el.style.animationDelay = (i % 3 * .12) + 's';
+  observer.observe(el);
+});
+
+/* ── PARALLAX ── */
+window.addEventListener('scroll', () => {
+  const y = window.scrollY;
+  const hero = document.querySelector('.hero-content');
+  if (hero) hero.style.transform = `translateY(${y * .25}px)`;
+}, { passive: true });
+</script>
+</body>
+</html>
